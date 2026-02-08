@@ -11,11 +11,7 @@ end
 
 function M.generate_code()
   local selection = ui.get_visual_selection()
-
-  if not selection then
-    vim.notify("InlineCoder: Please select code first", vim.log.levels.WARN)
-    return
-  end
+  local has_selection = selection ~= nil
 
   vim.ui.input({
     prompt = "Enter generation prompt: ",
@@ -26,22 +22,52 @@ function M.generate_code()
     end
 
     local bufnr = vim.api.nvim_get_current_buf()
-    local ctx = context.extract_context(bufnr, {
-      start_line = selection.start_line,
-      end_line = selection.end_line,
-    })
+    local cursor_pos = vim.api.nvim_win_get_cursor(0)
+    local cursor_line = cursor_pos[1] - 1
 
-    local cleanup_indicator = ui.show_generating_indicator(selection)
+    -- Get context based on whether we have a selection or not
+    local ctx
+    if has_selection then
+      ctx = context.extract_context(bufnr, {
+        start_line = selection.start_line,
+        end_line = selection.end_line,
+      })
+    else
+      ctx = context.extract_context(bufnr, {
+        start_line = cursor_line,
+        end_line = cursor_line,
+      })
+    end
 
-    api.call_lm_studio(selection.text, user_prompt, ctx, function(generated_code, err)
+    -- Show indicator based on mode
+    local cleanup_indicator
+    if has_selection then
+      cleanup_indicator = ui.show_generating_indicator(selection)
+    else
+      cleanup_indicator = ui.show_generating_indicator_at_cursor(cursor_line)
+    end
+
+    -- Call LLM with selection text (or empty string if no selection)
+    local input_text = has_selection and selection.text or ""
+
+    api.call_lm_studio(input_text, user_prompt, ctx, function(generated_code, err)
       cleanup_indicator()
 
       if err then
-        ui.show_error_message(err, selection)
+        if has_selection then
+          ui.show_error_message(err, selection)
+        else
+          ui.show_error_message(err, nil)
+        end
         return
       end
 
-      ui.replace_selection(generated_code, selection)
+      -- Insert or replace based on whether we had a selection
+      if has_selection then
+        ui.replace_selection(generated_code, selection)
+      else
+        ui.insert_above_cursor(generated_code, cursor_line)
+      end
       vim.notify("InlineCoder: Code generated successfully", vim.log.levels.INFO)
     end)
   end)

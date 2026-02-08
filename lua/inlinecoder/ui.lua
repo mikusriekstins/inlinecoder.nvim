@@ -54,12 +54,45 @@ function M.replace_selection(new_text, range)
   )
 end
 
+function M.insert_above_cursor(new_text, cursor_line)
+  if not new_text or new_text == "" then
+    vim.notify("No code to insert", vim.log.levels.WARN)
+    return
+  end
+
+  local new_lines = vim.split(new_text, "\n", { plain = true })
+
+  -- Insert lines above the cursor position
+  vim.api.nvim_buf_set_lines(
+    0,
+    cursor_line,
+    cursor_line,
+    false,
+    new_lines
+  )
+end
+
 function M.show_generating_indicator(range)
   vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
 
   local extmark_id = vim.api.nvim_buf_set_extmark(0, ns_id, range.start_line, range.start_col, {
     virt_text = {{"% Generating code %", "IncSearch"}},
     virt_text_pos = "overlay",
+    hl_mode = "combine",
+    priority = 100,
+  })
+
+  return function()
+    pcall(vim.api.nvim_buf_del_extmark, 0, ns_id, extmark_id)
+  end
+end
+
+function M.show_generating_indicator_at_cursor(line)
+  vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+
+  local extmark_id = vim.api.nvim_buf_set_extmark(0, ns_id, line, 0, {
+    virt_text = {{"% Generating code %", "IncSearch"}},
+    virt_text_pos = "eol",
     hl_mode = "combine",
     priority = 100,
   })
