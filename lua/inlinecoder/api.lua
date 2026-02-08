@@ -22,21 +22,34 @@ local function strip_markdown(text)
 end
 
 -- Call LM Studio API with selected code and user prompt
-function M.call_lm_studio(selected_code, user_prompt, callback)
+function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
   local cfg = config.get()
+
+  -- Build the messages array
+  local messages = {
+    {
+      role = "system",
+      content = cfg.system_prompt
+    }
+  }
+
+  -- Add context as a separate system message if available
+  if context_data and context_data.context_text and context_data.context_text ~= "" then
+    table.insert(messages, {
+      role = "system",
+      content = context_data.context_text
+    })
+  end
+
+  -- Add user message with code and prompt
+  table.insert(messages, {
+    role = "user",
+    content = string.format("Replace this code:\n```\n%s\n```\n\nWith: %s", selected_code, user_prompt)
+  })
 
   -- Build the request payload
   local payload = {
-    messages = {
-      {
-        role = "system",
-        content = cfg.system_prompt
-      },
-      {
-        role = "user",
-        content = string.format("Replace this code:\n```\n%s\n```\n\nWith: %s", selected_code, user_prompt)
-      }
-    },
+    messages = messages,
     temperature = cfg.temperature,
     max_tokens = cfg.max_tokens,
     stream = false

@@ -16,21 +16,43 @@ CRITICAL RULES:
 Return pure, executable code and nothing else.]],
   model = nil, -- Auto-detect from LM Studio
   temperature = 0.7,
-  max_tokens = 2048,
+  max_tokens = 8192,
+
+  -- Context extraction configuration
+  context = {
+    enabled = true,
+    max_lines = 150,
+    max_tokens_estimate = 600,
+
+    include = {
+      functions = true,
+      classes = true,
+      methods = true,
+      types = true,
+      imports = true,
+      variables = false,
+      comments = false,
+    },
+
+    prioritize_nearby = true,
+    nearby_lines = 50,
+    fallback_on_error = true,
+    show_context_errors = false,
+  },
 }
 
 -- Current configuration (will be set by setup)
-M.current = vim.deepcopy(M.defaults)
+M.options = vim.deepcopy(M.defaults)
 
 -- Merge user configuration with defaults
 function M.setup(opts)
-  M.current = vim.tbl_deep_extend("force", M.defaults, opts or {})
-  return M.current
+  M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
+  return M.options
 end
 
 -- Get current configuration
 function M.get()
-  return M.current
+  return M.options
 end
 
 return M

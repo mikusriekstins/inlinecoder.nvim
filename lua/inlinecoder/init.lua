@@ -4,6 +4,7 @@ local M = {}
 local config = require("inlinecoder.config")
 local api = require("inlinecoder.api")
 local ui = require("inlinecoder.ui")
+local context = require("inlinecoder.context")
 
 -- Setup function for user configuration
 function M.setup(opts)
@@ -30,11 +31,18 @@ function M.generate_code()
       return
     end
 
+    -- Extract context from buffer
+    local bufnr = vim.api.nvim_get_current_buf()
+    local ctx = context.extract_context(bufnr, {
+      start_line = selection.start_line,
+      end_line = selection.end_line,
+    })
+
     -- Show generating indicator
     local cleanup_indicator = ui.show_generating_indicator(selection)
 
     -- Call LM Studio API
-    api.call_lm_studio(selection.text, user_prompt, function(generated_code, err)
+    api.call_lm_studio(selection.text, user_prompt, ctx, function(generated_code, err)
       -- Always clear the indicator first
       cleanup_indicator()
 
