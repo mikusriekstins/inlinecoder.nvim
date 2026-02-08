@@ -1,7 +1,5 @@
--- Configuration management for inlinecoder
 local M = {}
 
--- Default configuration
 M.defaults = {
   api_url = "http://localhost:1234/v1/chat/completions",
   system_prompt = [[You are a code generation assistant. Your output must be ONLY raw code that can directly replace the selected text.
@@ -18,7 +16,6 @@ Return pure, executable code and nothing else.]],
   temperature = 0.7,
   max_tokens = 8192,
 
-  -- Context extraction configuration
   context = {
     enabled = true,
     max_lines = 150,
@@ -41,16 +38,13 @@ Return pure, executable code and nothing else.]],
   },
 }
 
--- Current configuration (will be set by setup)
 M.options = vim.deepcopy(M.defaults)
 
--- Merge user configuration with defaults
 function M.setup(opts)
   M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
   return M.options
 end
 
--- Get current configuration
 function M.get()
   return M.options
 end

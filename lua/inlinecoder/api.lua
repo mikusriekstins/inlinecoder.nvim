@@ -1,8 +1,6 @@
--- LM Studio API client
 local M = {}
 local config = require("inlinecoder.config")
 
--- Strip markdown code blocks from LLM response
 local function strip_markdown(text)
   if not text then return text end
 
@@ -21,11 +19,9 @@ local function strip_markdown(text)
   return text
 end
 
--- Call LM Studio API with selected code and user prompt
 function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
   local cfg = config.get()
 
-  -- Build the messages array
   local messages = {
     {
       role = "system",
@@ -33,7 +29,6 @@ function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
     }
   }
 
-  -- Add context as a separate system message if available
   if context_data and context_data.context_text and context_data.context_text ~= "" then
     table.insert(messages, {
       role = "system",
@@ -41,13 +36,11 @@ function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
     })
   end
 
-  -- Add user message with code and prompt
   table.insert(messages, {
     role = "user",
     content = string.format("Replace this code:\n```\n%s\n```\n\nWith: %s", selected_code, user_prompt)
   })
 
-  -- Build the request payload
   local payload = {
     messages = messages,
     temperature = cfg.temperature,
@@ -55,27 +48,23 @@ function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
     stream = false
   }
 
-  -- Add model if specified
   if cfg.model then
     payload.model = cfg.model
   end
 
-  -- Use plenary for async HTTP request
   local ok, curl = pcall(require, "plenary.curl")
   if not ok then
     callback(nil, "plenary.nvim not found. Please install it first.")
     return
   end
 
-  -- Make the API call
   curl.post(cfg.api_url, {
     body = vim.fn.json_encode(payload),
     headers = {
       ["Content-Type"] = "application/json",
     },
-    timeout = 30000, -- 30 second timeout
+    timeout = 30000,
     callback = vim.schedule_wrap(function(response)
-      -- Handle connection errors
       if not response then
         callback(nil, "No response from LM Studio. Is it running?")
         return
@@ -89,14 +78,12 @@ function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
         return
       end
 
-      -- Parse JSON response
       local ok_decode, result = pcall(vim.fn.json_decode, response.body)
       if not ok_decode then
         callback(nil, "Invalid JSON response from LM Studio")
         return
       end
 
-      -- Extract generated code
       if not result.choices or not result.choices[1] or not result.choices[1].message then
         callback(nil, "Unexpected response format from LM Studio")
         return
@@ -104,22 +91,18 @@ function M.call_lm_studio(selected_code, user_prompt, context_data, callback)
 
       local generated_code = result.choices[1].message.content
 
-      -- Check for empty response
       if not generated_code or generated_code == "" then
         callback(nil, "LM Studio returned empty code")
         return
       end
 
-      -- Strip markdown formatting if present
       generated_code = strip_markdown(generated_code)
 
-      -- Check again after stripping
       if not generated_code or generated_code == "" then
         callback(nil, "LM Studio returned empty code after cleaning")
         return
       end
 
-      -- Success!
       callback(generated_code, nil)
     end),
     on_error = vim.schedule_wrap(function(err)

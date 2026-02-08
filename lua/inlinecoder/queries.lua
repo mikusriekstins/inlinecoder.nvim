@@ -1,8 +1,5 @@
 local M = {}
 
--- Treesitter query definitions for different languages
--- Each query captures relevant code constructs for context extraction
-
 M.language_queries = {
   javascript = {
     functions = [[
