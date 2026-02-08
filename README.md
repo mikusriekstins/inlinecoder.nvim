@@ -22,7 +22,7 @@ AI-assisted code generation plugin for Neovim using local LM Studio.
 
 ```lua
 {
-  "yourusername/inline-coder.nvim",
+  "mikusriekstins/inlinecoder.nvim",
   dependencies = {
     "nvim-lua/plenary.nvim"
   },
@@ -39,7 +39,7 @@ AI-assisted code generation plugin for Neovim using local LM Studio.
 
 ```lua
 use {
-  "yourusername/inline-coder.nvim",
+  "mikusriekstins/inlinecoder.nvim",
   requires = { "nvim-lua/plenary.nvim" },
   config = function()
     require("inlinecoder").setup()
@@ -51,7 +51,7 @@ use {
 
 ```bash
 cd ~/.local/share/nvim/site/pack/plugins/start/
-git clone https://github.com/yourusername/inline-coder.nvim
+git clone https://github.com/mikusriekstins/inlinecoder.nvim
 ```
 
 Then add to your `init.lua`:
